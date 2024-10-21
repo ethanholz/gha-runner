@@ -85,6 +85,83 @@ class GitHubInstance:
         else:
             return resp.json()
 
+    def _create_jit_runner(self, labels: list[str]) -> tuple[dict, str]:
+        """Create a runner with the given label, platform, and architecture.
+        Parameters
+        ----------
+        labels : list[str]
+            The labels of the runner.
+        platform : str
+            The platform of the runner.
+        architecture : str
+            The architecture of the runner.
+        Returns
+        -------
+        str
+            The json-encoded runner config
+        """
+        name = self.generate_random_label()
+        labels = labels + [name, "self-hosted"]
+        body = {
+            "name": name,
+            "labels": labels,
+            "runner_group_id": 1,  # Use the default ID
+        }
+        try:
+            res = self.post(
+                f"repos/{self.repo}/actions/runners/generate-jitconfig",
+                json=body,
+            )
+            return res, name
+        except Exception as e:
+            raise TokenRetrievalError(f"Error creating runner token: {e}")
+
+    def create_jit_runner(self, labels: list[str]) -> tuple[str, str]:
+        """Create a runner with the given label, platform, and architecture.
+        Parameters
+        ----------
+        label : str
+            The label of the runner.
+        platform : str
+            The platform of the runner.
+        architecture : str
+            The architecture of the runner.
+        Retruns
+        -------
+        tuple[str, str]:
+            The encoded runner config and the name of the runner.
+        Raises
+        ------
+        TokenCreationError
+            If there is an error creating the runner.
+        """
+        runner_config, name = self._create_jit_runner(labels)
+        if runner_config["encoded_jit_config"]:
+            return runner_config["encoded_jit_config"], name
+        else:
+            raise TokenRetrievalError("Error creating runner")
+
+    def create_jit_runners(
+        self, labels: list[str], count: int
+    ) -> dict[str, str]:
+        """Generate jit runner configs for GitHub Actions runners.
+        Parameters
+        ----------
+        labels : list[str]
+            The labels of the runners.
+        count : int
+            The number of runners to generate.
+        Returns
+        -------
+        dict[str, str]
+            A dictionary of runner names and their respective configs.
+        """
+        configs = {}
+        for _ in range(count):
+            config, name = self.create_jit_runner(labels)
+            configs[name] = config
+        return configs
+
     def create_runner_tokens(self, count: int) -> list[str]:
         """Generate registration tokens for GitHub Actions runners.
         This can be removed if this is added into PyGitHub.
