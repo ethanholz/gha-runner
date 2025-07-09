@@ -30,8 +30,6 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-      - name: Describe
-        run: git describe
       - name: Additional info about the build
         shell: bash
         run: |
