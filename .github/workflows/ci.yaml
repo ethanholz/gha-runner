@@ -27,6 +27,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Describe
+        run: git describe
       - name: Additional info about the build
         shell: bash
         run: |
